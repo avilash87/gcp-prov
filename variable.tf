@@ -12,5 +12,5 @@ variable "gcp_region" {
 variable "bucket_suffix" {
   description = "bucket suffix"
   type        = string
-  default     = "test"
+  default     = "avilash"
 }
