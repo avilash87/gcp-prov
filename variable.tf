@@ -8,3 +8,9 @@ variable "gcp_region" {
   type        = string
   default     = "us-central1"
 }
+
+variable "bucket_suffix" {
+  description = "bucket suffix"
+  type        = string
+  default     = "test"
+}
