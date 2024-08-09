@@ -1,2 +1,2 @@
 # gcp-prov
-gcp provisioning done
+gcp provisioning.
