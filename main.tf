@@ -17,10 +17,6 @@ resource "google_compute_instance" "test_instance" {
   }
 
   tags = ["web", "dev"]
-
-  metadata = {
-    ssh-keys = "user:${file("~/.ssh/id_rsa.pub")}"
-  }
 }
 
 output "instance_name" {
