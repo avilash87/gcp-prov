@@ -1,5 +1,5 @@
 resource "google_storage_bucket" "auto-expire" {
-  name          = "no-public-access-bucket"
+  name          = "no-public-access-bucket-${var.gcp_project_id}-${random_string.bucket_suffix.result}"
   location      = var.gcp_region
   force_destroy = true
 
