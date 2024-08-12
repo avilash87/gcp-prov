@@ -51,8 +51,10 @@ jobs:
         uses: actions/github-script@v3
         with:
           script: |
-            // Check if the payload and pull_request objects exist
+            console.log("GitHub Context: ", JSON.stringify(github.context, null, 2));
+
             if (!github.context.payload || !github.context.payload.pull_request) {
+              console.log("Payload or pull_request is undefined.");
               core.setFailed("This action can only run on pull_request events.");
             } else {
               const prTitle = github.context.payload.pull_request.title;
