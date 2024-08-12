@@ -78,7 +78,7 @@ jobs:
         id: trigger-plan
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}  # Workspace ID from variable
+          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}  # Workspace ID pulled from secret
         run: |
           response=$(curl -s -X POST \
             -H "Authorization: Bearer $TFE_TOKEN" \
@@ -133,6 +133,12 @@ jobs:
             -H "Content-Type: application/vnd.api+json" \
             "https://app.terraform.io/api/v2/runs/$run_id")
           plan_log_url=$(echo $response | jq -r '.data.attributes.plan-log-read-url')
+          
+          if [ -z "$plan_log_url" ]; then
+            echo "Plan log URL is not available. The Terraform run might have failed before generating the plan log."
+            exit 1
+          fi
+
           echo "Fetching plan output..."
           curl -s $plan_log_url
 
@@ -145,7 +151,7 @@ jobs:
         id: trigger-apply
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}  # Workspace ID from variable
+          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}  # Workspace ID pulled from secret
         run: |
           response=$(curl -s -X POST \
             -H "Authorization: Bearer $TFE_TOKEN" \
@@ -183,5 +189,11 @@ jobs:
             -H "Content-Type: application/vnd.api+json" \
             "https://app.terraform.io/api/v2/runs/$run_id")
           apply_log_url=$(echo $response | jq -r '.data.attributes.apply-log-read-url')
+
+          if [ -z "$apply_log_url" ]; then
+            echo "Apply log URL is not available. The Terraform run might have failed before generating the apply log."
+            exit 1
+          fi
+
           echo "Fetching apply output..."
           curl -s $apply_log_url
