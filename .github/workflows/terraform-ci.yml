@@ -123,7 +123,7 @@ jobs:
             echo "Current status: $status"
           done
 
-      - name: Fetch Plan Log and Display Output
+      - name: Fetch Plan Resource Change Summary
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
         run: |
@@ -135,24 +135,15 @@ jobs:
             -H "Content-Type: application/vnd.api+json" \
             "https://app.terraform.io/api/v2/runs/$run_id")
           
-          # Extract the Plan Log URL
-          plan_log_url=$(echo $run_response | jq -r '.data.attributes."plan-log-read-url"')
-          
-          # Print the Plan Log URL
-          echo "Plan Log URL: $plan_log_url"
+          # Extract the Resource Changes Summary
+          resource_changes=$(echo $run_response | jq -r '.data.attributes."resource-changes" // empty')
 
-          if [ -z "$plan_log_url" ]; then
-            echo "Plan log URL is not available. Cannot fetch detailed plan log."
-            exit 1
+          if [ -z "$resource_changes" ]; then
+            echo "No resource changes detected or summary not available."
+          else:
+            echo "Terraform Plan Resource Change Summary:"
+            echo "$resource_changes" | jq .
           fi
-          
-          # Check if the URL is reachable
-          echo "Checking URL connectivity..."
-          curl -I $plan_log_url
-
-          # Fetch and display the plan log
-          echo "Fetching plan log..."
-          curl -s $plan_log_url
 
   trigger-terraform-cloud:
     name: Trigger Terraform Cloud Apply
