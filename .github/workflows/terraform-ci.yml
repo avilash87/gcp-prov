@@ -123,7 +123,7 @@ jobs:
             echo "Current status: $status"
           done
 
-      - name: Debug Plan ID and Fetch Plan Output
+      - name: Fetch and Debug Plan Output
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
         run: |
@@ -152,6 +152,9 @@ jobs:
             -H "Authorization: Bearer $TFE_TOKEN" \
             -H "Content-Type: application/vnd.api+json" \
             "https://app.terraform.io/api/v2/plans/$plan_id/json-output")
+
+          # Debug: Print the entire response from the plan output endpoint
+          echo "Full Plan Output Response: $plan_output"
 
           echo "Terraform Plan Detailed Output:"
           echo "$plan_output" | jq .
