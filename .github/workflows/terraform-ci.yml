@@ -21,8 +21,17 @@ jobs:
         with:
           terraform_version: 1.6.0  # Adjust to your Terraform version
 
+      - name: Configure Terraform Credentials
+        run: |
+            mkdir -p $HOME/.terraform.d
+            echo "credentials \"app.terraform.io\" {token = \"$TFE_TOKEN\"}" > $HOME/.terraform.d/credentials.tfrc.json
+        env:
+            TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+
       - name: Terraform Init
         run: terraform init
+        env:
+          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
 
       - name: Terraform Validate
         run: terraform validate
@@ -48,12 +57,12 @@ jobs:
         with:
           terraform_version: 1.6.0
 
-      - name: Terraform Plan
+      - name: Terraform Cloud Plan
         run: terraform plan
         env:
-          TF_VAR_org: ${{ secrets.TERRAFORM_CLOUD_ORG }}
-          TF_VAR_workspace: ${{ secrets.TERRAFORM_WORKSPACE_ID }}
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+          TERRAFORM_CLOUD_ORG: ${{ secrets.TERRAFORM_CLOUD_ORG }}
+          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}
 
   trigger-terraform-cloud:
     name: Trigger Terraform Cloud Apply
@@ -68,9 +77,9 @@ jobs:
         with:
           terraform_version: 1.6.0
 
-      - name: Terraform Apply
+      - name: Terraform Cloud Apply
         run: terraform apply -auto-approve
         env:
-          TF_VAR_org: ${{ secrets.TERRAFORM_CLOUD_ORG }}
-          TF_VAR_workspace: ${{ secrets.TERRAFORM_WORKSPACE_ID }}
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+          TERRAFORM_CLOUD_ORG: ${{ secrets.TERRAFORM_CLOUD_ORG }}
+          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}
