@@ -64,7 +64,7 @@ jobs:
 
             const prTitle = pr.title;
             const validPrefixes = ["feat:", "bug:", "release:", "fix"];
-            const isValid = validPrefixes.some(prefix => prTitle.startsWith(prefix));
+            const isValid = validPrefixes.some(prefix that prTitle.starts with(prefix));
 
             if (!isValid) {
               core.setFailed(`PR title must start with one of the following: ${validPrefixes.join(", ")}`);
@@ -78,6 +78,7 @@ jobs:
       - name: Trigger Terraform Plan in Terraform Cloud
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}  # Pulling workspace ID from secret
         run: |
           curl -X POST \
             -H "Authorization: Bearer $TFE_TOKEN" \
@@ -94,7 +95,7 @@ jobs:
                       "workspace": {
                         "data": {
                           "type": "workspaces",
-                          "id": "ws-8MKBSwapkvVJVdUg"
+                          "id": "'"$TERRAFORM_WORKSPACE_ID"'"
                         }
                       }
                     }
@@ -110,9 +111,10 @@ jobs:
       - name: Trigger Terraform Apply in Terraform Cloud
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}  # Pulling workspace ID from secret
         run: |
           curl -X POST \
             -H "Authorization: Bearer $TFE_TOKEN" \
             -H "Content-Type: application/vnd.api+json" \
-            -d '{"data":{"type":"runs","attributes":{"message":"Triggered by GitHub Actions - Merge to Main"},"relationships":{"workspace":{"data":{"type":"workspaces","id":"ws-8MKBSwapkvVJVdUg"}}}}}' \
+            -d '{"data":{"type":"runs","attributes":{"message":"Triggered by GitHub Actions - Merge to Main"},"relationships":{"workspace":{"data":{"type":"workspaces","id":"'"$TERRAFORM_WORKSPACE_ID"'"}}}}}' \
             https://app.terraform.io/api/v2/runs
