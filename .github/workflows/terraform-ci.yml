@@ -20,6 +20,9 @@ jobs:
         uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 1.5.2  # Adjust to your Terraform version
+      
+      - name: Terraform Init  # Added step
+        run: terraform init  # This will download the providers
 
       - name: Terraform Validate
         run: terraform validate
