@@ -123,7 +123,7 @@ jobs:
             echo "Current status: $status"
           done
 
-      - name: Fetch Terraform Plan Output
+      - name: Fetch Terraform Plan Summary
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
         run: |
@@ -132,18 +132,15 @@ jobs:
             -H "Authorization: Bearer $TFE_TOKEN" \
             -H "Content-Type: application/vnd.api+json" \
             "https://app.terraform.io/api/v2/runs/$run_id")
-          echo "Full API response:"
-          echo "$response"
+          plan_summary=$(echo $response | jq -r '.data.attributes."resource-changes" // empty')
 
-          plan_log_url=$(echo $response | jq -r '.data.attributes."plan-log-read-url" // empty')
-
-          if [ -z "$plan_log_url" ]; then
-            echo "Plan log URL is not available. The Terraform run might have failed before generating the plan log."
+          if [ -z "$plan_summary" ]; then
+            echo "Plan summary is not available. The Terraform run might have failed before generating the plan summary."
             exit 1
           fi
 
-          echo "Fetching plan output..."
-          curl -s $plan_log_url
+          echo "Terraform Plan Summary:"
+          echo "$plan_summary"
 
   trigger-terraform-cloud:
     name: Trigger Terraform Cloud Apply
