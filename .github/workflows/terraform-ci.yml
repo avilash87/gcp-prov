@@ -46,24 +46,27 @@ jobs:
     name: Check PR Title
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
       - name: Check PR Title
         id: check_pr_title
         uses: actions/github-script@v3
         with:
           script: |
-            console.log("GitHub Context: ", JSON.stringify(github.context, null, 2));
+            const { data: pr } = await github.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
 
-            if (!github.context.payload || !github.context.payload.pull_request) {
-              console.log("Payload or pull_request is undefined.");
-              core.setFailed("This action can only run on pull_request events.");
-            } else {
-              const prTitle = github.context.payload.pull_request.title;
-              const validPrefixes = ["feat/", "bug/", "release/"];
-              const isValid = validPrefixes.some(prefix => prTitle.startsWith(prefix));
+            console.log("PR Data: ", pr);
 
-              if (!isValid) {
-                core.setFailed(`PR title must start with one of the following: ${validPrefixes.join(", ")}`);
-              }
+            const prTitle = pr.title;
+            const validPrefixes = ["feat/", "bug/", "release/"];
+            const isValid = validPrefixes.some(prefix => prTitle.startsWith(prefix));
+
+            if (!isValid) {
+              core.setFailed(`PR title must start with one of the following: ${validPrefixes.join(", ")}`);
             }
 
   terraform-cloud-plan:
