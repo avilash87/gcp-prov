@@ -63,7 +63,7 @@ jobs:
             // console.log("PR Data: ", pr);
 
             const prTitle = pr.title;
-            const validPrefixes = ["feat:", "bug:", "release:"];
+            const validPrefixes = ["feat:", "bug:", "release:", "fix"];
             const isValid = validPrefixes.some(prefix => prTitle.startsWith(prefix));
 
             if (!isValid) {
