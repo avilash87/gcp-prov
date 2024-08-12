@@ -54,17 +54,13 @@ jobs:
         uses: actions/github-script@v3
         with:
           script: |
-            if (!github.context.payload || !github.context.payload.pull_request) {
-              core.setFailed("This action can only run on pull_request events.");
-              return;
-            }
-
-            const pull_number = github.context.payload.pull_request.number;
             const { data: pr } = await github.pulls.get({
-              owner: github.context.repo.owner,
-              repo: github.context.repo.repo,
-              pull_number: pull_number
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
             });
+
+            // console.log("PR Data: ", pr);
 
             const prTitle = pr.title;
             const validPrefixes = ["feat:", "bug:", "release:"];
@@ -73,6 +69,7 @@ jobs:
             if (!isValid) {
               core.setFailed(`PR title must start with one of the following: ${validPrefixes.join(", ")}`);
             }
+
   terraform-cloud-plan:
     name: Terraform Plan on Terraform Cloud
     runs-on: ubuntu-latest
