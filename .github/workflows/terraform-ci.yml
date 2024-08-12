@@ -20,6 +20,13 @@ jobs:
         uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 1.5.2  # Adjust to your Terraform version
+
+      - name: Configure Terraform Credentials
+        run: |
+            mkdir -p $HOME/.terraform.d
+            echo "credentials \"app.terraform.io\" {token = \"$TFE_TOKEN\"}" > $HOME/.terraform.d/credentials.tfrc.json
+        env:
+            TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
       
       - name: Terraform Init  # Added step
         run: terraform init  # This will download the providers
