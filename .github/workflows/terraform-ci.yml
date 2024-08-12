@@ -40,7 +40,7 @@ jobs:
 
       - name: Terraform Lint
         run: |
-          ./tflint
+          tflint
 
   check-pr-title:
     name: Check PR Title
