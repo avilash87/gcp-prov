@@ -101,6 +101,9 @@ jobs:
                   }
                 }' \
             https://app.terraform.io/api/v2/runs
+            run_id=$(echo $response | jq -r '.data.id')
+            echo "Run ID: $run_id"
+            echo "::set-output name=run_id::$run_id"
             
       - name: Wait for Terraform Plan to Complete
         id: wait-plan
@@ -134,6 +137,9 @@ jobs:
             -H "Content-Type: application/vnd.api+json" \
             -d '{"data":{"type":"runs","attributes":{"message":"Triggered by GitHub Actions - Merge to Main"},"relationships":{"workspace":{"data":{"type":"workspaces","id":"'"$TERRAFORM_WORKSPACE_ID"'"}}}}}' \
             https://app.terraform.io/api/v2/runs
+            run_id=$(echo $response | jq -r '.data.id')
+            echo "Run ID: $run_id"
+            echo "::set-output name=run_id::$run_id"
             
       - name: Wait for Terraform Apply to Complete
         id: wait-apply
