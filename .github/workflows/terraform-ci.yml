@@ -69,7 +69,7 @@ jobs:
             }
 
 
-  terraform-cloud-plan:
+ terraform-cloud-plan:
     name: Terraform Plan on Terraform Cloud
     runs-on: ubuntu-latest
     needs: [lint-and-validate, check-pr-title]
@@ -102,6 +102,11 @@ jobs:
                   }
                 }' \
             https://app.terraform.io/api/v2/runs)
+          
+          # Debugging: Print the entire API response
+          echo "Full API response:"
+          echo "$response"
+
           run_id=$(echo $response | jq -r '.data.id')
           echo "Run ID: $run_id"
 
@@ -111,22 +116,6 @@ jobs:
           fi
 
           echo "run_id=$run_id" >> $GITHUB_ENV
-
-      - name: Wait for Terraform Plan to Complete
-        env:
-          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-          run_id: ${{ env.run_id }}
-        run: |
-          status="pending"
-          while [ "$status" != "planned_and_finished" ] && [ "$status" != "errored" ]; do
-            sleep 15
-            response=$(curl -s -X GET \
-              -H "Authorization: Bearer $TFE_TOKEN" \
-              -H "Content-Type: application/vnd.api+json" \
-              "https://app.terraform.io/api/v2/runs/$run_id")
-            status=$(echo $response | jq -r '.data.attributes.status')
-            echo "Current status: $status"
-          done
 
   trigger-terraform-cloud:
     name: Trigger Terraform Cloud Apply
@@ -143,6 +132,11 @@ jobs:
             -H "Content-Type: application/vnd.api+json" \
             -d '{"data":{"type":"runs","attributes":{"message":"Triggered by GitHub Actions - Merge to Main"},"relationships":{"workspace":{"data":{"type":"workspaces","id":"'"$TERRAFORM_WORKSPACE_ID"'""}}}}}' \
             https://app.terraform.io/api/v2/runs)
+          
+          # Debugging: Print the entire API response
+          echo "Full API response:"
+          echo "$response"
+
           run_id=$(echo $response | jq -r '.data.id')
           echo "Run ID: $run_id"
 
