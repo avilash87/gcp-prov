@@ -140,7 +140,7 @@ jobs:
 
           if [ -z "$resource_changes" ]; then
             echo "No resource changes detected or summary not available."
-          else:
+          else
             echo "Terraform Plan Resource Change Summary:"
             echo "$resource_changes" | jq .
           fi
