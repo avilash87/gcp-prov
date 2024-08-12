@@ -45,6 +45,7 @@ jobs:
   check-pr-title:
     name: Check PR Title
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -53,28 +54,25 @@ jobs:
         uses: actions/github-script@v3
         with:
           script: |
-            // Ensure we're running in a pull request context
-            if (!github.context.payload.pull_request) {
-              core.setFailed("This action is only valid in the context of a pull request.");
+            if (!github.context.payload || !github.context.payload.pull_request) {
+              core.setFailed("This action can only run on pull_request events.");
               return;
             }
 
-            // Get the PR number and details
             const pull_number = github.context.payload.pull_request.number;
             const { data: pr } = await github.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner: github.context.repo.owner,
+              repo: github.context.repo.repo,
               pull_number: pull_number
             });
 
             const prTitle = pr.title;
-            const validPrefixes = ["feat/", "bug/", "release/"];
+            const validPrefixes = ["feat:", "bug:", "release:"];
             const isValid = validPrefixes.some(prefix => prTitle.startsWith(prefix));
 
             if (!isValid) {
               core.setFailed(`PR title must start with one of the following: ${validPrefixes.join(", ")}`);
             }
-
   terraform-cloud-plan:
     name: Terraform Plan on Terraform Cloud
     runs-on: ubuntu-latest
