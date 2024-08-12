@@ -45,6 +45,7 @@ jobs:
   check-pr-title:
     name: Check PR Title
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -62,7 +63,7 @@ jobs:
             // console.log("PR Data: ", pr);
 
             const prTitle = pr.title;
-            const validPrefixes = ["feat:", "bug:", "release:"];
+            const validPrefixes = ["feat:", "bug:", "release:", "fix"];
             const isValid = validPrefixes.some(prefix => prTitle.startsWith(prefix));
 
             if (!isValid) {
