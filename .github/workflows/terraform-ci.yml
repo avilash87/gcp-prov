@@ -19,7 +19,7 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: 1.5.2  # Adjust to your Terraform version
+          terraform_version: 1.5.2
 
       - name: Configure Terraform Credentials
         run: |
@@ -28,8 +28,8 @@ jobs:
         env:
             TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
       
-      - name: Terraform Init  # Added step
-        run: terraform init  # This will download the providers
+      - name: Terraform Init
+        run: terraform init
 
       - name: Terraform Validate
         run: terraform validate
@@ -49,6 +49,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
       - name: Check PR Title
         id: check_pr_title
         uses: actions/github-script@v3
@@ -59,8 +60,6 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             });
-
-            // console.log("PR Data: ", pr);
 
             const prTitle = pr.title;
             const validPrefixes = ["feat:", "bug:", "release:", "fix"];
@@ -76,10 +75,12 @@ jobs:
     needs: [lint-and-validate, check-pr-title]
     steps:
       - name: Trigger Terraform Plan in Terraform Cloud
+        id: trigger-plan
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}  # Workspace ID pulled from secret
         run: |
-          curl -X POST \
+          response=$(curl -s -X POST \
             -H "Authorization: Bearer $TFE_TOKEN" \
             -H "Content-Type: application/vnd.api+json" \
             -d '{
@@ -94,13 +95,52 @@ jobs:
                       "workspace": {
                         "data": {
                           "type": "workspaces",
-                          "id": "ws-8MKBSwapkvVJVdUg"
+                          "id": "'"$TERRAFORM_WORKSPACE_ID"'"
                         }
                       }
                     }
                   }
                 }' \
-            https://app.terraform.io/api/v2/runs
+            https://app.terraform.io/api/v2/runs)
+          run_id=$(echo $response | jq -r '.data.id')
+          echo "Run ID: $run_id"
+          echo "::set-output name=run_id::$run_id"
+
+      - name: Wait for Terraform Plan to Complete
+        id: wait-plan
+        env:
+          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+        run: |
+          run_id=${{ steps.trigger-plan.outputs.run_id }}
+          status="pending"
+          while [ "$status" != "planned_and_finished" ] && [ "$status" != "errored" ]; do
+            sleep 15
+            response=$(curl -s -X GET \
+              -H "Authorization: Bearer $TFE_TOKEN" \
+              -H "Content-Type: application/vnd.api+json" \
+              "https://app.terraform.io/api/v2/runs/$run_id")
+            status=$(echo $response | jq -r '.data.attributes.status')
+            echo "Current status: $status"
+          done
+
+      - name: Check and Report Terraform Plan Outcome
+        env:
+          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+        run: |
+          run_id=${{ steps.trigger-plan.outputs.run_id }}
+          response=$(curl -s -X GET \
+            -H "Authorization: Bearer $TFE_TOKEN" \
+            -H "Content-Type: application/vnd.api+json" \
+            "https://app.terraform.io/api/v2/runs/$run_id")
+
+          plan_summary=$(echo $response | jq -r '.data.attributes."resource-changes" // empty')
+
+          if [ -z "$plan_summary" ]; then
+            echo "No changes detected by Terraform."
+          else
+            echo "Terraform Plan Summary:"
+            echo "$plan_summary"
+          fi
 
   trigger-terraform-cloud:
     name: Trigger Terraform Cloud Apply
@@ -108,11 +148,52 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Trigger Terraform Apply in Terraform Cloud
+        id: trigger-apply
+        env:
+          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}  # Workspace ID pulled from secret
+        run: |
+          response=$(curl -s -X POST \
+            -H "Authorization: Bearer $TFE_TOKEN" \
+            -H "Content-Type: application/vnd.api+json" \
+            -d '{"data":{"type":"runs","attributes":{"message":"Triggered by GitHub Actions - Merge to Main"},"relationships":{"workspace":{"data":{"type":"workspaces","id":"'"$TERRAFORM_WORKSPACE_ID"'""}}}}}' \
+            https://app.terraform.io/api/v2/runs)
+          run_id=$(echo $response | jq -r '.data.id')
+          echo "Run ID: $run_id"
+          echo "::set-output name=run_id::$run_id"
+
+      - name: Wait for Terraform Apply to Complete
+        id: wait-apply
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
         run: |
-          curl -X POST \
+          run_id=${{ steps.trigger-apply.outputs.run_id }}
+          status="pending"
+          while [ "$status" != "applied" ] && [ "$status" != "errored" ]; do
+            sleep 15
+            response=$(curl -s -X GET \
+              -H "Authorization: Bearer $TFE_TOKEN" \
+              -H "Content-Type: application/vnd.api+json" \
+              "https://app.terraform.io/api/v2/runs/$run_id")
+            status=$(echo $response | jq -r '.data.attributes.status')
+            echo "Current status: $status"
+          done
+
+      - name: Fetch Terraform Apply Output
+        env:
+          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+        run: |
+          run_id=${{ steps.trigger-apply.outputs.run_id }}
+          response=$(curl -s -X GET \
             -H "Authorization: Bearer $TFE_TOKEN" \
             -H "Content-Type: application/vnd.api+json" \
-            -d '{"data":{"type":"runs","attributes":{"message":"Triggered by GitHub Actions - Merge to Main"},"relationships":{"workspace":{"data":{"type":"workspaces","id":"ws-8MKBSwapkvVJVdUg"}}}}}' \
-            https://app.terraform.io/api/v2/runs
+            "https://app.terraform.io/api/v2/runs/$run_id")
+          apply_log_url=$(echo $response | jq -r '.data.attributes."apply-log-read-url" // empty')
+
+          if [ -z "$apply_log_url" ]; then
+            echo "Apply log URL is not available. The Terraform run might have failed before generating the apply log."
+            exit 1
+          fi
+
+          echo "Fetching apply output..."
+          curl -s $apply_log_url
