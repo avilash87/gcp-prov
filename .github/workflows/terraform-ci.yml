@@ -59,10 +59,10 @@ jobs:
               pull_number: context.issue.number
             });
 
-            console.log("PR Data: ", pr);
+            # console.log("PR Data: ", pr);
 
             const prTitle = pr.title;
-            const validPrefixes = ["feat/", "bug/", "release/"];
+            const validPrefixes = ["feat:", "bug:", "release:"];
             const isValid = validPrefixes.some(prefix => prTitle.startsWith(prefix));
 
             if (!isValid) {
