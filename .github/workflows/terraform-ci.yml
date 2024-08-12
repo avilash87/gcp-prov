@@ -78,36 +78,4 @@ jobs:
           TERRAFORM_CLOUD_ORG: ${{ secrets.TERRAFORM_CLOUD_ORG }}
           TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}
 
-  trigger-terraform-cloud:
-    name: Trigger Terraform Cloud Apply
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.6.0
-
-      - name: Configure Terraform Credentials
-        run: |
-            mkdir -p $HOME/.terraform.d
-            echo "credentials \"app.terraform.io\" {token = \"$TFE_TOKEN\"}" > $HOME/.terraform.d/credentials.tfrc.json
-        env:
-            TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-
-      - name: Terraform Init
-        run: terraform init -upgrade
-        env:
-          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-          TERRAFORM_CLOUD_ORG: ${{ secrets.TERRAFORM_CLOUD_ORG }}
-          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}
-
-      - name: Terraform Cloud Apply
-        run: terraform apply -auto-approve
-        env:
-          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-          TERRAFORM_CLOUD_ORG: ${{ secrets.TERRAFORM_CLOUD_ORG }}
-          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}
+  # Removing the apply step since Terraform Cloud will handle it automatically based on VCS changes
