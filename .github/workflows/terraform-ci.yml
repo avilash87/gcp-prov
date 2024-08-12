@@ -57,6 +57,13 @@ jobs:
         with:
           terraform_version: 1.6.0
 
+      - name: Configure Terraform Credentials
+        run: |
+            mkdir -p $HOME/.terraform.d
+            echo "credentials \"app.terraform.io\" {token = \"$TFE_TOKEN\"}" > $HOME/.terraform.d/credentials.tfrc.json
+        env:
+            TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+
       - name: Terraform Cloud Plan
         run: terraform plan
         env:
@@ -76,6 +83,13 @@ jobs:
         uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 1.6.0
+
+      - name: Configure Terraform Credentials
+        run: |
+            mkdir -p $HOME/.terraform.d
+            echo "credentials \"app.terraform.io\" {token = \"$TFE_TOKEN\"}" > $HOME/.terraform.d/credentials.tfrc.json
+        env:
+            TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
 
       - name: Terraform Cloud Apply
         run: terraform apply -auto-approve
