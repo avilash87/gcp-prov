@@ -51,16 +51,17 @@ jobs:
         uses: actions/github-script@v3
         with:
           script: |
-            if (!github.context.payload.pull_request) {
+            // Check if the payload and pull_request objects exist
+            if (!github.context.payload || !github.context.payload.pull_request) {
               core.setFailed("This action can only run on pull_request events.");
-            }
+            } else {
+              const prTitle = github.context.payload.pull_request.title;
+              const validPrefixes = ["feat/", "bug/", "release/"];
+              const isValid = validPrefixes.some(prefix => prTitle.startsWith(prefix));
 
-            const prTitle = github.context.payload.pull_request.title;
-            const validPrefixes = ["feat/", "bug/", "release/"];
-            const isValid = validPrefixes.some(prefix => prTitle.startsWith(prefix));
-
-            if (!isValid) {
-              core.setFailed(`PR title must start with one of the following: ${validPrefixes.join(", ")}`);
+              if (!isValid) {
+                core.setFailed(`PR title must start with one of the following: ${validPrefixes.join(", ")}`);
+              }
             }
 
   terraform-cloud-plan:
