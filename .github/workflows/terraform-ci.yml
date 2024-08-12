@@ -64,6 +64,13 @@ jobs:
         env:
             TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
 
+      - name: Terraform Init
+        run: terraform init -upgrade
+        env:
+          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+          TERRAFORM_CLOUD_ORG: ${{ secrets.TERRAFORM_CLOUD_ORG }}
+          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}
+
       - name: Terraform Cloud Plan
         run: terraform plan
         env:
@@ -90,6 +97,13 @@ jobs:
             echo "credentials \"app.terraform.io\" {token = \"$TFE_TOKEN\"}" > $HOME/.terraform.d/credentials.tfrc.json
         env:
             TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+
+      - name: Terraform Init
+        run: terraform init -upgrade
+        env:
+          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+          TERRAFORM_CLOUD_ORG: ${{ secrets.TERRAFORM_CLOUD_ORG }}
+          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}
 
       - name: Terraform Cloud Apply
         run: terraform apply -auto-approve
