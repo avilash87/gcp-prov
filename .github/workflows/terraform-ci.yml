@@ -60,15 +60,14 @@ jobs:
               pull_number: context.issue.number
             });
 
-            // console.log("PR Data: ", pr);
-
             const prTitle = pr.title;
             const validPrefixes = ["feat:", "bug:", "release:", "fix"];
-            const isValid = validPrefixes.some(prefix that prTitle.starts with(prefix));
+            const isValid = validPrefixes.some(prefix => prTitle.startsWith(prefix));
 
             if (!isValid) {
               core.setFailed(`PR title must start with one of the following: ${validPrefixes.join(", ")}`);
             }
+
 
   terraform-cloud-plan:
     name: Terraform Plan on Terraform Cloud
