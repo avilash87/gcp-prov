@@ -75,11 +75,12 @@ jobs:
     needs: [lint-and-validate, check-pr-title]
     steps:
       - name: Trigger Terraform Plan in Terraform Cloud
+        id: trigger-plan
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}  # Pulling workspace ID from secret
+          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}  # Workspace ID pulled from secret
         run: |
-          curl -X POST \
+          response=$(curl -s -X POST \
             -H "Authorization: Bearer $TFE_TOKEN" \
             -H "Content-Type: application/vnd.api+json" \
             -d '{
@@ -100,11 +101,11 @@ jobs:
                     }
                   }
                 }' \
-            https://app.terraform.io/api/v2/runs
-            run_id=$(echo $response | jq -r '.data.id')
-            echo "Run ID: $run_id"
-            echo "::set-output name=run_id::$run_id"
-            
+            https://app.terraform.io/api/v2/runs)
+          run_id=$(echo $response | jq -r '.data.id')
+          echo "Run ID: $run_id"
+          echo "::set-output name=run_id::$run_id"
+
       - name: Wait for Terraform Plan to Complete
         id: wait-plan
         env:
@@ -128,19 +129,20 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Trigger Terraform Apply in Terraform Cloud
+        id: trigger-apply
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}  # Pulling workspace ID from secret
+          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}  # Workspace ID pulled from secret
         run: |
-          curl -X POST \
+          response=$(curl -s -X POST \
             -H "Authorization: Bearer $TFE_TOKEN" \
             -H "Content-Type: application/vnd.api+json" \
-            -d '{"data":{"type":"runs","attributes":{"message":"Triggered by GitHub Actions - Merge to Main"},"relationships":{"workspace":{"data":{"type":"workspaces","id":"'"$TERRAFORM_WORKSPACE_ID"'"}}}}}' \
-            https://app.terraform.io/api/v2/runs
-            run_id=$(echo $response | jq -r '.data.id')
-            echo "Run ID: $run_id"
-            echo "::set-output name=run_id::$run_id"
-            
+            -d '{"data":{"type":"runs","attributes":{"message":"Triggered by GitHub Actions - Merge to Main"},"relationships":{"workspace":{"data":{"type":"workspaces","id":"'"$TERRAFORM_WORKSPACE_ID"'""}}}}}' \
+            https://app.terraform.io/api/v2/runs)
+          run_id=$(echo $response | jq -r '.data.id')
+          echo "Run ID: $run_id"
+          echo "::set-output name=run_id::$run_id"
+
       - name: Wait for Terraform Apply to Complete
         id: wait-apply
         env:
