@@ -51,6 +51,10 @@ jobs:
         uses: actions/github-script@v3
         with:
           script: |
+            if (!github.context.payload.pull_request) {
+              core.setFailed("This action can only run on pull_request events.");
+            }
+
             const prTitle = github.context.payload.pull_request.title;
             const validPrefixes = ["feat/", "bug/", "release/"];
             const isValid = validPrefixes.some(prefix => prTitle.startsWith(prefix));
