@@ -49,6 +49,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
       - name: Check PR Title
         id: check_pr_title
         uses: actions/github-script@v3
@@ -61,7 +62,7 @@ jobs:
             });
 
             const prTitle = pr.title;
-            const validPrefixes are ["feat:", "bug:", "release:", "fix"];
+            const validPrefixes = ["feat:", "bug:", "release:", "fix"];  # Corrected Line
             const isValid = validPrefixes.some(prefix => prTitle.startsWith(prefix));
 
             if (!isValid) {
