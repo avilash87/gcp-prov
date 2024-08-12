@@ -143,6 +143,10 @@ jobs:
             -H "Content-Type: application/vnd.api+json" \
             -d '{"data":{"type":"runs","attributes":{"message":"Triggered by GitHub Actions - Merge to Main"},"relationships":{"workspace":{"data":{"type":"workspaces","id":"'"$TERRAFORM_WORKSPACE_ID"'""}}}}}' \
             https://app.terraform.io/api/v2/runs)
+          # Debugging: Print the entire API response
+          echo "Full API response:"
+          echo "$response"
+
           run_id=$(echo $response | jq -r '.data.id')
           echo "Run ID: $run_id"
 
