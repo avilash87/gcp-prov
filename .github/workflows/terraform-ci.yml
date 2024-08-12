@@ -103,13 +103,20 @@ jobs:
                 }' \
             https://app.terraform.io/api/v2/runs)
           run_id=$(echo $response | jq -r '.data.id')
+          echo "Run ID: $run_id"
+
+          if [ -z "$run_id" ] || [ "$run_id" == "null" ]; then
+            echo "Run ID is null or empty. Exiting."
+            exit 1
+          fi
+
           echo "run_id=$run_id" >> $GITHUB_ENV
 
       - name: Wait for Terraform Plan to Complete
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+          run_id: ${{ env.run_id }}
         run: |
-          run_id=${{ env.run_id }}
           status="pending"
           while [ "$status" != "planned_and_finished" ] && [ "$status" != "errored" ]; do
             sleep 15
@@ -137,13 +144,20 @@ jobs:
             -d '{"data":{"type":"runs","attributes":{"message":"Triggered by GitHub Actions - Merge to Main"},"relationships":{"workspace":{"data":{"type":"workspaces","id":"'"$TERRAFORM_WORKSPACE_ID"'""}}}}}' \
             https://app.terraform.io/api/v2/runs)
           run_id=$(echo $response | jq -r '.data.id')
+          echo "Run ID: $run_id"
+
+          if [ -z "$run_id" ] || [ "$run_id" == "null" ]; then
+            echo "Run ID is null or empty. Exiting."
+            exit 1
+          fi
+
           echo "run_id=$run_id" >> $GITHUB_ENV
 
       - name: Wait for Terraform Apply to Complete
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+          run_id: ${{ env.run_id }}
         run: |
-          run_id=${{ env.run_id }}
           status="pending"
           while [ "$status" != "applied" ] && [ "$status" != "errored" ]; do
             sleep 15
