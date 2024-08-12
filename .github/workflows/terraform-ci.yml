@@ -34,11 +34,12 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+      - name: Install TFLint
+        run: |
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
       - name: Terraform Lint
         run: |
-          curl -sSLo .tflint.hcl https://raw.githubusercontent.com/terraform-linters/tflint/master/.tflint.hcl
-          curl -sSLo tflint https://raw.githubusercontent.com/terraform-linters/tflint/master/tflint
-          chmod +x tflint
           ./tflint
 
   check-pr-title:
