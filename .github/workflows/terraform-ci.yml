@@ -123,36 +123,28 @@ jobs:
             echo "Current status: $status"
           done
 
-      - name: Fetch Terraform Plan Summary
+      - name: Fetch Detailed Plan Output
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
         run: |
           run_id=${{ steps.trigger-plan.outputs.run_id }}
-          response=$(curl -s -X GET \
+          plan_id=$(curl -s -X GET \
             -H "Authorization: Bearer $TFE_TOKEN" \
             -H "Content-Type: application/vnd.api+json" \
-            "https://app.terraform.io/api/v2/runs/$run_id")
-          
-          echo "Full API response:"
-          echo "$response"
+            "https://app.terraform.io/api/v2/runs/$run_id" | jq -r '.data.relationships.plan.data.id')
 
-          # Extracting detailed plan summary (if available)
-          plan_details=$(echo $response | jq -r '.data.attributes."resource-change-summary" // empty')
-
-          if [ -z "$plan_details" ]; then
-            echo "No detailed resource change summary available. Checking other fields..."
-            plan_log_url=$(echo $response | jq -r '.data.attributes."plan-log-read-url" // empty')
-
-            if [ -n "$plan_log_url" ]; then
-              echo "Fetching plan output from log URL..."
-              curl -s $plan_log_url
-            else
-              echo "No changes detected or no log URL available."
-            fi
-          else
-            echo "Terraform Plan Summary:"
-            echo "$plan_details"
+          if [ -z "$plan_id" ]; then
+            echo "Plan ID is not available. Cannot fetch detailed plan output."
+            exit 1
           fi
+
+          plan_output=$(curl -s -X GET \
+            -H "Authorization: Bearer $TFE_TOKEN" \
+            -H "Content-Type: application/vnd.api+json" \
+            "https://app.terraform.io/api/v2/plans/$plan_id/json-output")
+
+          echo "Terraform Plan Detailed Output:"
+          echo "$plan_output" | jq .
 
   trigger-terraform-cloud:
     name: Trigger Terraform Cloud Apply
