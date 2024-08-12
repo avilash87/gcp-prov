@@ -188,8 +188,16 @@ jobs:
             status=$(echo $response | jq -r '.data.attributes.status')
             echo "Current status: $status"
           done
-
+          
           if [ "$status" == "planned_and_finished" ]; then
+            # Check if the apply action is available
+            can_apply=$(echo $response | jq -r '.data.attributes.actions.is-confirmable')
+            
+            if [ "$can_apply" != "true" ]; then
+              echo "Apply action is not available for this run. Exiting."
+              exit 1
+            fi
+
             apply_id=$(curl -s -X POST \
               -H "Authorization: Bearer $TFE_TOKEN" \
               -H "Content-Type: application/vnd.api+json" \
@@ -200,6 +208,11 @@ jobs:
                   }' \
               "https://app.terraform.io/api/v2/runs/$run_id/actions/apply" | jq -r '.data.id')
             echo "Triggered apply: $apply_id"
+            
+            if [ "$apply_id" == "null" ]; then
+              echo "Apply ID is null. Failed to trigger the apply action."
+              exit 1
+            fi
             
             # Wait for the apply to complete
             status="pending"
