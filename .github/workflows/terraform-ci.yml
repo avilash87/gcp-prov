@@ -78,7 +78,7 @@ jobs:
         id: trigger-plan
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}  # Workspace ID pulled from secret
+          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}
         run: |
           response=$(curl -s -X POST \
             -H "Authorization: Bearer $TFE_TOKEN" \
@@ -103,15 +103,13 @@ jobs:
                 }' \
             https://app.terraform.io/api/v2/runs)
           run_id=$(echo $response | jq -r '.data.id')
-          echo "Run ID: $run_id"
-          echo "::set-output name=run_id::$run_id"
+          echo "run_id=$run_id" >> $GITHUB_ENV
 
       - name: Wait for Terraform Plan to Complete
-        id: wait-plan
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
         run: |
-          run_id=${{ steps.trigger-plan.outputs.run_id }}
+          run_id=${{ env.run_id }}
           status="pending"
           while [ "$status" != "planned_and_finished" ] && [ "$status" != "errored" ]; do
             sleep 15
@@ -129,10 +127,9 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Trigger Terraform Apply in Terraform Cloud
-        id: trigger-apply
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}  # Workspace ID pulled from secret
+          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}
         run: |
           response=$(curl -s -X POST \
             -H "Authorization: Bearer $TFE_TOKEN" \
@@ -140,15 +137,13 @@ jobs:
             -d '{"data":{"type":"runs","attributes":{"message":"Triggered by GitHub Actions - Merge to Main"},"relationships":{"workspace":{"data":{"type":"workspaces","id":"'"$TERRAFORM_WORKSPACE_ID"'""}}}}}' \
             https://app.terraform.io/api/v2/runs)
           run_id=$(echo $response | jq -r '.data.id')
-          echo "Run ID: $run_id"
-          echo "::set-output name=run_id::$run_id"
+          echo "run_id=$run_id" >> $GITHUB_ENV
 
       - name: Wait for Terraform Apply to Complete
-        id: wait-apply
         env:
           TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
         run: |
-          run_id=${{ steps.trigger-apply.outputs.run_id }}
+          run_id=${{ env.run_id }}
           status="pending"
           while [ "$status" != "applied" ] && [ "$status" != "errored" ]; do
             sleep 15
