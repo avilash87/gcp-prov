@@ -1,0 +1,62 @@
+name: Manual Deploy with All Input Types
+
+on:
+  workflow_dispatch:
+    inputs:
+      # 1. STRING input
+      app_name:
+        description: "Enter your application name"
+        required: true
+        default: "my-app"
+
+      # 2. CHOICE input
+      deploy_strategy:
+        description: "Select deployment strategy"
+        required: true
+        type: choice
+        options:
+          - blue-green
+          - rolling
+          - canary
+
+      # 3. BOOLEAN input
+      run_smoke_tests:
+        description: "Run smoke tests after deployment?"
+        required: true
+        type: boolean
+        default: true
+
+      # 4. ENVIRONMENT input
+      target_environment:
+        description: "Target environment (from GitHub settings)"
+        required: true
+        type: environment
+
+      # 🧪 MULTI-SELECT HACK: Comma-separated list as string
+      services:
+        description: "Comma-separated services to deploy (e.g., auth,api,web)"
+        required: true
+        default: "auth,api"
+
+jobs:
+  display-inputs:
+    name: Show and Use Inputs
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.target_environment }}
+    steps:
+      - name: Print all inputs
+        run: |
+          echo "🟢 App Name: ${{ github.event.inputs.app_name }}"
+          echo "🌀 Deployment Strategy: ${{ github.event.inputs.deploy_strategy }}"
+          echo "✅ Run Smoke Tests: ${{ github.event.inputs.run_smoke_tests }}"
+          echo "🌍 Target Environment: ${{ github.event.inputs.target_environment }}"
+          echo "📦 Selected Services: ${{ github.event.inputs.services }}"
+
+      - name: Parse multi-select services (split comma-separated string)
+        run: |
+          echo "Parsing selected services..."
+          IFS=',' read -ra services <<< "${{ github.event.inputs.services }}"
+          for svc in "${services[@]}"; do
+            echo "➡️ Deploying service: $svc"
+            # Here you could call a script, deploy tool, etc.
+          done
