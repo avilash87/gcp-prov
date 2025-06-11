@@ -1,4 +1,4 @@
-name: Append Test Line on /test Comment
+name: Append via /test with Verified Signature
 
 on:
   issue_comment:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Extract PR branch name
+      - name: Get PR branch info
         id: pr
         uses: actions/github-script@v7
         with:
@@ -20,27 +20,41 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             });
-            core.setOutput("branch", pr.data.head.ref);
+            core.setOutput('branch', pr.data.head.ref);
+            core.setOutput('sha', pr.data.head.sha);
 
-      - name: Checkout PR branch
-        uses: actions/checkout@v4
+      - name: Get file content and commit via GitHub API
+        uses: actions/github-script@v7
         with:
-          token: ${{ secrets.GIT_TOKEN }}
-          ref: ${{ steps.pr.outputs.branch }}
-          fetch-depth: 0
+          github-token: ${{ secrets.GIT_TOKEN }}
+          script: |
+            const branch = "${{ steps.pr.outputs.branch }}";
+            const filePath = "test.txt";
 
-      - name: Configure Git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            const { data: fileData } = await github.rest.repos.getContent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: filePath,
+              ref: branch
+            });
 
-      - name: Append line to file
-        run: echo "This is test" >> test.txt
+            const content = Buffer.from(fileData.content, 'base64').toString('utf-8');
+            const newContent = content + '\nThis is test';
 
-      - name: Commit and push
-        run: |
-          git add test.txt
-          git commit -m "chore: append test line from /test comment"
-          git push origin HEAD
-        env:
-          GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
+            await github.rest.repos.createOrUpdateFileContents({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: filePath,
+              message: "chore: append test line via /test comment",
+              content: Buffer.from(newContent, 'utf-8').toString('base64'),
+              sha: fileData.sha,
+              branch: branch,
+              committer: {
+                name: "GitHub Actions",
+                email: "41898282+github-actions[bot]@users.noreply.github.com"
+              },
+              author: {
+                name: "GitHub Actions",
+                email: "41898282+github-actions[bot]@users.noreply.github.com"
+              }
+            });
