@@ -15,21 +15,21 @@ jobs:
         with:
           token: ${{ secrets.GIT_TOKEN }}
           ref: ${{ github.event.issue.pull_request.head.ref }}
-          fetch-depth: 0  # ensure full history
+          fetch-depth: 0  # full history for commit
 
       - name: Configure Git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Add test line
+      - name: Append line to file
         run: |
           echo "This is test" >> test.txt
 
-      - name: Commit and Push Changes
+      - name: Commit and push changes
         run: |
           git add test.txt
-          git commit -m "chore: append test line [automated test run]"
+          git commit -m "chore: append test line from /test comment"
           git push origin HEAD
         env:
           GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
