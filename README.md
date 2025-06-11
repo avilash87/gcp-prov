@@ -1,6 +1,6 @@
 # Terraform CI/CD Pipeline with GitHub Actions
 
-This repository demonstrates a complete CI/CD pipeline using GitHub Actions to manage Terraform configurations. The workflow handles pull requests, runs linting and validation checks, and automatically triggers Terraform Cloud on merge.
+This repository demonstrates a complete CI/CD pipeline using GitHub Actions to manage Terraform configurations. The workflow handles pull requests, runs linting and validation checks, and automatically triggers Terraform Cloud on merge..
 
 ## Workflow Overview
 
