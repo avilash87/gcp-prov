@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Extract PR Info
+      - name: Extract PR branch name
         id: pr
         uses: actions/github-script@v7
         with:
@@ -20,13 +20,13 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             });
-            return pr.data.head.ref;
+            core.setOutput("branch", pr.data.head.ref);
 
       - name: Checkout PR branch
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GIT_TOKEN }}
-          ref: ${{ steps.pr.outputs.result }}
+          ref: ${{ steps.pr.outputs.branch }}
           fetch-depth: 0
 
       - name: Configure Git
@@ -37,7 +37,7 @@ jobs:
       - name: Append line to file
         run: echo "This is test" >> test.txt
 
-      - name: Commit and Push
+      - name: Commit and push
         run: |
           git add test.txt
           git commit -m "chore: append test line from /test comment"
