@@ -21,17 +21,10 @@ jobs:
         with:
           terraform_version: 1.6.0
 
-      - name: Configure Terraform Credentials
-        run: |
-            mkdir -p $HOME/.terraform.d
-            echo "credentials \"app.terraform.io\" {token = \"$TFE_TOKEN\"}" > $HOME/.terraform.d/credentials.tfrc.json
-        env:
-            TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-
       - name: Terraform Init
         run: terraform init
         env:
-          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+          TF_TOKEN_app_terraform_io: ${{ secrets.TFE_TOKEN }}
 
       - name: Terraform Validate
         run: terraform validate
@@ -57,25 +50,24 @@ jobs:
         with:
           terraform_version: 1.6.0
 
-      - name: Configure Terraform Credentials
-        run: |
-            mkdir -p $HOME/.terraform.d
-            echo "credentials \"app.terraform.io\" {token = \"$TFE_TOKEN\"}" > $HOME/.terraform.d/credentials.tfrc.json
-        env:
-            TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+      - name: Cache Terraform
+        uses: actions/cache@v3
+        with:
+          path: |
+            .terraform
+            .terraform.lock.hcl
+          key: terraform-${{ hashFiles('**/*.tf') }}
+          restore-keys: |
+            terraform-
 
       - name: Terraform Init
-        run: terraform init -upgrade
+        run: terraform init
         env:
-          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-          TERRAFORM_CLOUD_ORG: ${{ secrets.TERRAFORM_CLOUD_ORG }}
-          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}
+          TF_TOKEN_app_terraform_io: ${{ secrets.TFE_TOKEN }}
 
       - name: Terraform Cloud Plan
         run: terraform plan
         env:
-          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-          TERRAFORM_CLOUD_ORG: ${{ secrets.TERRAFORM_CLOUD_ORG }}
-          TERRAFORM_WORKSPACE_ID: ${{ secrets.TERRAFORM_WORKSPACE_ID }}
+          TF_TOKEN_app_terraform_io: ${{ secrets.TFE_TOKEN }}
 
   # Removing the apply step since Terraform Cloud will handle it automatically based on VCS changes
